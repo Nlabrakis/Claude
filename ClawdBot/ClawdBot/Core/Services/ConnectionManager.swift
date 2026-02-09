@@ -1,6 +1,7 @@
 import Foundation
-import Network
+@preconcurrency import Network
 
+@MainActor
 @Observable
 final class ConnectionManager {
     enum ConnectionStatus: Equatable {

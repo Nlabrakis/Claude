@@ -1,6 +1,7 @@
 import CoreHaptics
 import UIKit
 
+@MainActor
 @Observable
 final class HapticsService {
     private var engine: CHHapticEngine?

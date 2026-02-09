@@ -1,6 +1,7 @@
 import Foundation
 import SwiftData
 
+@MainActor
 @Observable
 final class ChatViewModel {
     var inputText = ""
@@ -43,12 +44,16 @@ final class ChatViewModel {
         inputText = ""
         saveContext()
 
+        // Read saved temperature from settings
+        let temperature = SettingsViewModel.savedTemperature
+
         // Start streaming
         await chatService.sendMessage(
             text,
             conversation: conversation,
             networkService: networkService,
-            modelName: modelName
+            modelName: modelName,
+            temperature: temperature
         )
 
         // Persist assistant response
@@ -92,11 +97,15 @@ final class ChatViewModel {
         if let lastUser = conversation.sortedMessages.last, lastUser.role == .user {
             inputText = ""
 
+            // Read saved temperature from settings
+            let temperature = SettingsViewModel.savedTemperature
+
             await chatService.sendMessage(
                 lastUser.content,
                 conversation: conversation,
                 networkService: networkService,
-                modelName: modelName ?? ""
+                modelName: modelName ?? "",
+                temperature: temperature
             )
 
             let responseContent = chatService.currentResponse

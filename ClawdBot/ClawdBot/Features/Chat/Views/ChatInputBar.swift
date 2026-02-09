@@ -8,15 +8,20 @@ struct ChatInputBar: View {
     let onStop: () -> Void
 
     @FocusState private var isFocused: Bool
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    private var placeholder: String {
+        isConnected ? "Message ClawdBot..." : "Connect to a server first..."
+    }
 
     var body: some View {
         HStack(alignment: .bottom, spacing: Theme.spacingSM) {
-            TextField("Message ClawdBot...", text: $text, axis: .vertical)
+            TextField(placeholder, text: $text, axis: .vertical)
                 .font(Theme.font(.body))
                 .lineLimit(1...6)
                 .padding(.horizontal, Theme.spacingMD)
                 .padding(.vertical, Theme.spacingSM + 2)
-                .background(Color(.systemGray6), in: RoundedRectangle(cornerRadius: Theme.cornerRadiusSM, style: .continuous))
+                .background(Theme.surfaceColor, in: RoundedRectangle(cornerRadius: Theme.cornerRadiusSM, style: .continuous))
                 .focused($isFocused)
                 .disabled(!isConnected)
                 .onSubmit {
@@ -35,6 +40,8 @@ struct ChatInputBar: View {
                 Image(systemName: isStreaming ? "stop.circle.fill" : "arrow.up.circle.fill")
                     .font(.system(size: 36))
                     .foregroundStyle(buttonColor)
+                    .contentTransition(.symbolEffect(.replace))
+                    .animation(reduceMotion ? .none : Theme.gentleAnimation, value: isStreaming)
             }
             .frame(minWidth: Theme.minTapTarget, minHeight: Theme.minTapTarget)
             .disabled(!isStreaming && !canSend)
@@ -42,7 +49,7 @@ struct ChatInputBar: View {
         }
         .padding(.horizontal, Theme.spacingMD)
         .padding(.vertical, Theme.spacingSM)
-        .background(.ultraThinMaterial)
+        .background(.thinMaterial)
     }
 
     private var canSend: Bool {
@@ -53,6 +60,6 @@ struct ChatInputBar: View {
         if isStreaming {
             return .red
         }
-        return canSend ? .blue : .gray
+        return canSend ? Theme.accentBlue : Color(white: 0.3)
     }
 }

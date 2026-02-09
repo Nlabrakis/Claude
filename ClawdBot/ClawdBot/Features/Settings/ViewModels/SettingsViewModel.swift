@@ -1,16 +1,38 @@
 import Foundation
 
+@MainActor
 @Observable
 final class SettingsViewModel {
+
+    // MARK: - Connection Properties
+
     var hostInput = ""
     var portInput = "11434"
     var isTestingConnection = false
     var connectionTestResult: String?
+
+    // MARK: - Defaults Properties
+
     var temperature: Double = 0.7
     var systemPrompt = ""
 
+    // MARK: - Keys
+
     private static let temperatureKey = "defaultTemperature"
     private static let systemPromptKey = "defaultSystemPrompt"
+
+    // MARK: - Static Accessors
+
+    static var savedTemperature: Double {
+        let val = UserDefaults.standard.double(forKey: temperatureKey)
+        return val == 0 ? 0.7 : val
+    }
+
+    static var savedSystemPrompt: String {
+        UserDefaults.standard.string(forKey: systemPromptKey) ?? ""
+    }
+
+    // MARK: - Init
 
     init() {
         temperature = UserDefaults.standard.double(forKey: Self.temperatureKey)

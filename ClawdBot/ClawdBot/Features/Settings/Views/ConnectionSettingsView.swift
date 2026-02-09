@@ -71,7 +71,7 @@ struct ConnectionSettingsView: View {
                     .foregroundStyle(.secondary)
                     .padding(Theme.spacingMD)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(Color(.systemGray6), in: RoundedRectangle(cornerRadius: Theme.cornerRadiusSM, style: .continuous))
+                    .background(Theme.surfaceColor, in: RoundedRectangle(cornerRadius: Theme.cornerRadiusSM, style: .continuous))
             } else {
                 ForEach(discoveryService.discoveredServers) { server in
                     Button {
@@ -95,7 +95,7 @@ struct ConnectionSettingsView: View {
                             }
                         }
                         .padding(Theme.spacingMD)
-                        .background(Color(.systemGray6), in: RoundedRectangle(cornerRadius: Theme.cornerRadiusSM, style: .continuous))
+                        .background(Theme.surfaceColor, in: RoundedRectangle(cornerRadius: Theme.cornerRadiusSM, style: .continuous))
                     }
                     .frame(minHeight: Theme.minTapTarget)
                 }
@@ -115,7 +115,7 @@ struct ConnectionSettingsView: View {
                     .font(Theme.font(.body))
                     .padding(.horizontal, Theme.spacingMD)
                     .padding(.vertical, Theme.spacingSM + 2)
-                    .background(Color(.systemGray6), in: RoundedRectangle(cornerRadius: Theme.cornerRadiusSM, style: .continuous))
+                    .background(Theme.surfaceColor, in: RoundedRectangle(cornerRadius: Theme.cornerRadiusSM, style: .continuous))
                     .autocorrectionDisabled()
                     .textInputAutocapitalization(.never)
                     .keyboardType(.URL)
@@ -124,7 +124,7 @@ struct ConnectionSettingsView: View {
                     .font(Theme.font(.body))
                     .padding(.horizontal, Theme.spacingMD)
                     .padding(.vertical, Theme.spacingSM + 2)
-                    .background(Color(.systemGray6), in: RoundedRectangle(cornerRadius: Theme.cornerRadiusSM, style: .continuous))
+                    .background(Theme.surfaceColor, in: RoundedRectangle(cornerRadius: Theme.cornerRadiusSM, style: .continuous))
                     .keyboardType(.numberPad)
             }
 
@@ -148,7 +148,7 @@ struct ConnectionSettingsView: View {
                     }
                     .frame(maxWidth: .infinity)
                     .frame(minHeight: Theme.minTapTarget)
-                    .background(Color.blue, in: RoundedRectangle(cornerRadius: Theme.cornerRadiusSM, style: .continuous))
+                    .background(Theme.accentBlue, in: RoundedRectangle(cornerRadius: Theme.cornerRadiusSM, style: .continuous))
                     .foregroundStyle(.white)
                 }
                 .disabled(viewModel.isTestingConnection || viewModel.hostInput.isEmpty)

@@ -1,5 +1,6 @@
 import Foundation
 
+@MainActor
 @Observable
 final class ServerStatusViewModel {
     var runningModels: OllamaRunningModels?

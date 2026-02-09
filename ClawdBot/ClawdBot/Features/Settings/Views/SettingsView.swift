@@ -37,7 +37,7 @@ struct SettingsView: View {
                             title: "Server Connection",
                             subtitle: connectionManager.currentServer?.id ?? "Not connected"
                         ) {
-                            appState.navigate(to: .settings) // TODO: sub-navigation to ConnectionSettingsView
+                            appState.navigate(to: .connectionSettings)
                         }
 
                         settingsButton(
@@ -71,14 +71,14 @@ struct SettingsView: View {
                             }
 
                             Slider(value: $viewModel.temperature, in: 0...2, step: 0.1)
-                                .tint(.blue)
+                                .tint(Theme.accentBlue)
 
                             Text("Lower = more focused, Higher = more creative")
                                 .font(Theme.font(.caption2))
                                 .foregroundStyle(.tertiary)
                         }
                         .padding(Theme.spacingMD)
-                        .background(Color(.systemGray6), in: RoundedRectangle(cornerRadius: Theme.cornerRadiusSM, style: .continuous))
+                        .background(Theme.surfaceColor, in: RoundedRectangle(cornerRadius: Theme.cornerRadiusSM, style: .continuous))
                     }
 
                     // Default System Prompt
@@ -87,7 +87,7 @@ struct SettingsView: View {
                             .font(Theme.font(.body))
                             .frame(minHeight: 120)
                             .padding(Theme.spacingSM)
-                            .background(Color(.systemGray6), in: RoundedRectangle(cornerRadius: Theme.cornerRadiusSM, style: .continuous))
+                            .background(Theme.surfaceColor, in: RoundedRectangle(cornerRadius: Theme.cornerRadiusSM, style: .continuous))
                     }
 
                     // About Section
@@ -106,7 +106,7 @@ struct SettingsView: View {
                                 .foregroundStyle(.secondary)
                         }
                         .padding(Theme.spacingMD)
-                        .background(Color(.systemGray6), in: RoundedRectangle(cornerRadius: Theme.cornerRadiusSM, style: .continuous))
+                        .background(Theme.surfaceColor, in: RoundedRectangle(cornerRadius: Theme.cornerRadiusSM, style: .continuous))
                     }
                 }
                 .padding(Theme.spacingMD)
@@ -138,7 +138,7 @@ struct SettingsView: View {
                 Image(systemName: icon)
                     .font(.system(size: 22))
                     .frame(width: 32)
-                    .foregroundStyle(.blue)
+                    .foregroundStyle(Theme.accentBlue)
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text(title)
@@ -156,7 +156,7 @@ struct SettingsView: View {
                     .foregroundStyle(.tertiary)
             }
             .padding(Theme.spacingMD)
-            .background(Color(.systemGray6), in: RoundedRectangle(cornerRadius: Theme.cornerRadiusSM, style: .continuous))
+            .background(Theme.surfaceColor, in: RoundedRectangle(cornerRadius: Theme.cornerRadiusSM, style: .continuous))
         }
         .frame(minHeight: Theme.minTapTarget)
     }

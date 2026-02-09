@@ -1,10 +1,10 @@
 import Foundation
 
+@MainActor
 @Observable
 final class NetworkService {
     var baseURL: URL?
 
-    private var currentTask: Task<Void, Never>?
     private let session: URLSession
 
     init() {
@@ -69,10 +69,15 @@ final class NetworkService {
         temperature: Double = 0.7,
         maxTokens: Int? = nil
     ) -> AsyncThrowingStream<String, Error> {
-        AsyncThrowingStream { continuation in
+        // Extract self's properties into local variables so the closure
+        // does not capture `self` (which is non-Sendable / @MainActor-isolated).
+        let localBaseURL = self.baseURL
+        let localSession = self.session
+
+        return AsyncThrowingStream { continuation in
             let task = Task {
                 do {
-                    guard let baseURL else {
+                    guard let baseURL = localBaseURL else {
                         continuation.finish(throwing: NetworkError.noServer)
                         return
                     }
@@ -92,7 +97,7 @@ final class NetworkService {
                     )
                     request.httpBody = try JSONEncoder().encode(body)
 
-                    let (bytes, response) = try await session.bytes(for: request)
+                    let (bytes, response) = try await localSession.bytes(for: request)
 
                     guard let httpResponse = response as? HTTPURLResponse,
                           httpResponse.statusCode == 200 else {
@@ -125,8 +130,6 @@ final class NetworkService {
                     }
                 }
             }
-
-            self.currentTask = task
 
             continuation.onTermination = { @Sendable _ in
                 task.cancel()
@@ -172,9 +175,12 @@ final class NetworkService {
 
     // MARK: - Cancellation
 
+    /// Cancellation is handled through the stream's onTermination callback.
+    /// When ChatService.stopGeneration() cancels its streamTask, the
+    /// AsyncThrowingStream's onTermination fires and cancels the inner
+    /// network Task automatically.
     func cancelCurrentStream() {
-        currentTask?.cancel()
-        currentTask = nil
+        // No-op: cancellation flows through the stream's onTermination handler.
     }
 }
 

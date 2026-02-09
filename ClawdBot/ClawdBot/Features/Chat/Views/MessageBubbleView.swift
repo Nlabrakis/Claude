@@ -9,29 +9,38 @@ struct MessageBubbleView: View {
     var body: some View {
         HStack {
             if message.role == .user {
-                Spacer(minLength: 60)
+                Spacer(minLength: 48)
             }
 
             VStack(alignment: message.role == .user ? .trailing : .leading, spacing: Theme.spacingXS) {
-                Text(message.content + streamingCursor)
-                    .font(Theme.font(.body))
-                    .foregroundStyle(textColor)
+                messageContent
                     .textSelection(.enabled)
                     .padding(.horizontal, Theme.spacingMD)
                     .padding(.vertical, Theme.spacingSM + 4)
                     .background(bubbleColor, in: bubbleShape)
 
-                Text(message.createdAt.shortFormatted)
-                    .font(Theme.font(.caption2))
-                    .foregroundStyle(.secondary)
-                    .padding(.horizontal, Theme.spacingXS)
+                // Timestamps hidden for cleaner aesthetic
             }
 
             if message.role == .assistant {
-                Spacer(minLength: 60)
+                Spacer(minLength: 48)
             }
         }
         .padding(.horizontal, Theme.spacingSM)
+    }
+
+    // MARK: - Message Content
+
+    @ViewBuilder
+    private var messageContent: some View {
+        if message.role == .user {
+            Text(message.content)
+                .font(Theme.font(.body))
+                .foregroundStyle(textColor)
+        } else {
+            MarkdownTextView(content: message.content, foregroundColor: textColor)
+                .font(Theme.font(.body))
+        }
     }
 
     // MARK: - Appearance

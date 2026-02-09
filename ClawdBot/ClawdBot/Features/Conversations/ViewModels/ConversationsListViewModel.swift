@@ -1,6 +1,7 @@
 import Foundation
 import SwiftData
 
+@MainActor
 @Observable
 final class ConversationsListViewModel {
     var editingConversation: Conversation?
@@ -15,7 +16,11 @@ final class ConversationsListViewModel {
     // MARK: - Create
 
     func createConversation(modelName: String?) -> Conversation {
-        let conversation = Conversation(modelName: modelName)
+        let defaultPrompt = SettingsViewModel.savedSystemPrompt
+        let conversation = Conversation(
+            systemPrompt: defaultPrompt.isEmpty ? nil : defaultPrompt,
+            modelName: modelName
+        )
         modelContext?.insert(conversation)
         try? modelContext?.save()
         return conversation

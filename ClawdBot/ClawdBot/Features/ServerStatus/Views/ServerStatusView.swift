@@ -82,7 +82,7 @@ struct ServerStatusView: View {
                                 .font(Theme.font(.headline))
                                 .frame(maxWidth: .infinity)
                                 .frame(minHeight: Theme.minTapTarget)
-                                .background(Color.blue, in: RoundedRectangle(cornerRadius: Theme.cornerRadiusSM, style: .continuous))
+                                .background(Theme.accentBlue, in: RoundedRectangle(cornerRadius: Theme.cornerRadiusSM, style: .continuous))
                                 .foregroundStyle(.white)
                         }
 
@@ -119,7 +119,14 @@ struct ServerStatusView: View {
     }
 
     private func refresh() async {
-        await viewModel.fetchStatus(using: networkService)
+        viewModel.isLoading = true
+        viewModel.error = nil
+        do {
+            viewModel.runningModels = try await networkService.fetchRunningModels()
+        } catch {
+            viewModel.error = error.localizedDescription
+        }
+        viewModel.isLoading = false
         await modelService.fetchModels(using: networkService)
     }
 
@@ -134,7 +141,7 @@ struct ServerStatusView: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(Theme.spacingMD)
-        .background(Color(.systemGray6), in: RoundedRectangle(cornerRadius: Theme.cornerRadiusSM, style: .continuous))
+        .background(Theme.surfaceColor, in: RoundedRectangle(cornerRadius: Theme.cornerRadiusSM, style: .continuous))
     }
 
     private func statusRow(_ label: String, value: String, color: Color? = nil) -> some View {

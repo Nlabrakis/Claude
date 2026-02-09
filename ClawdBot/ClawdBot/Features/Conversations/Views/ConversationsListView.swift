@@ -14,6 +14,10 @@ struct ConversationsListView: View {
 
     @State private var viewModel = ConversationsListViewModel()
 
+    private var isDisconnected: Bool {
+        connectionManager.status != .connected
+    }
+
     var body: some View {
         VStack(spacing: 0) {
             // Header
@@ -106,11 +110,45 @@ struct ConversationsListView: View {
                 .font(Theme.font(.body))
                 .foregroundStyle(.tertiary)
 
+            if isDisconnected {
+                disconnectedPrompt
+            }
+
             newChatButton
 
             Spacer()
         }
         .frame(maxWidth: .infinity)
+    }
+
+    // MARK: - Disconnected Prompt
+
+    private var disconnectedPrompt: some View {
+        VStack(spacing: Theme.spacingSM) {
+            HStack(spacing: Theme.spacingSM) {
+                Image(systemName: "exclamationmark.triangle.fill")
+                    .foregroundStyle(.orange)
+                Text("No server connected")
+                    .font(Theme.font(.subheadline))
+                    .foregroundStyle(.secondary)
+            }
+
+            Button {
+                appState.navigate(to: .connectionSettings)
+            } label: {
+                HStack {
+                    Image(systemName: "server.rack")
+                        .font(.system(size: 18))
+                    Text("Connect to Server")
+                        .font(Theme.font(.headline))
+                }
+                .frame(maxWidth: .infinity)
+                .frame(minHeight: Theme.minTapTarget)
+                .background(Color.orange, in: RoundedRectangle(cornerRadius: Theme.cornerRadiusSM, style: .continuous))
+                .foregroundStyle(.white)
+            }
+            .padding(.horizontal, Theme.spacingXL)
+        }
     }
 
     // MARK: - Conversation List
@@ -166,7 +204,7 @@ struct ConversationsListView: View {
                 }
             }
             .padding(Theme.spacingMD)
-            .background(Color(.systemGray6), in: RoundedRectangle(cornerRadius: Theme.cornerRadiusSM, style: .continuous))
+            .background(Theme.surfaceColor, in: RoundedRectangle(cornerRadius: Theme.cornerRadiusSM, style: .continuous))
         }
         .contextMenu {
             Button {
@@ -200,7 +238,7 @@ struct ConversationsListView: View {
             }
             .frame(maxWidth: .infinity)
             .frame(minHeight: Theme.minTapTarget)
-            .background(Color.blue, in: RoundedRectangle(cornerRadius: Theme.cornerRadiusSM, style: .continuous))
+            .background(Theme.accentBlue, in: RoundedRectangle(cornerRadius: Theme.cornerRadiusSM, style: .continuous))
             .foregroundStyle(.white)
         }
     }

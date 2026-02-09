@@ -1,5 +1,6 @@
 import Foundation
 
+@MainActor
 @Observable
 final class ChatService {
     var currentResponse = ""
@@ -52,7 +53,7 @@ final class ChatService {
                     accumulateToken(token)
                 }
                 // Final flush
-                await flushBuffer()
+                flushBuffer()
             } catch {
                 if !Task.isCancelled {
                     self.error = error.localizedDescription
@@ -88,14 +89,13 @@ final class ChatService {
         tokenBuffer += token
 
         if flushTask == nil {
-            flushTask = Task { @MainActor [weak self] in
+            flushTask = Task { [weak self] in
                 try? await Task.sleep(for: .milliseconds(33))
-                await self?.flushBuffer()
+                self?.flushBuffer()
             }
         }
     }
 
-    @MainActor
     private func flushBuffer() {
         currentResponse += tokenBuffer
         tokenBuffer = ""

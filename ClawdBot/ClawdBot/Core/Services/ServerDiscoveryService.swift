@@ -1,5 +1,5 @@
 import Foundation
-import Network
+@preconcurrency import Network
 
 struct DiscoveredServer: Identifiable, Hashable {
     var id: String { "\(host):\(port)" }
@@ -12,6 +12,7 @@ struct DiscoveredServer: Identifiable, Hashable {
     }
 }
 
+@MainActor
 @Observable
 final class ServerDiscoveryService {
     var discoveredServers: [DiscoveredServer] = []
@@ -62,23 +63,33 @@ final class ServerDiscoveryService {
         isSearching = false
     }
 
-    // MARK: - Scan Common Ports
+    // MARK: - Subnet Scanning
 
-    /// Scans the local network for Ollama instances on the default port.
-    /// Useful as a fallback when Bonjour is not advertised.
+    /// Detects the device's WiFi IP, calculates the /24 subnet, and probes
+    /// every address for an Ollama instance on the default port.
     func scanLocalNetwork() async {
         isSearching = true
         var found: [DiscoveredServer] = []
 
-        // Try common local addresses
-        let commonHosts = [
-            "localhost",
-            "127.0.0.1",
-            "192.168.1.1",
-        ]
+        // Build the list of hosts to probe
+        var hostsToProbe: [String] = ["localhost", "127.0.0.1"]
 
+        // Detect device IP and scan the whole /24 subnet
+        if let deviceIP = Self.getWiFiIPAddress() {
+            let parts = deviceIP.split(separator: ".")
+            if parts.count == 4, let prefix = parts.dropLast().joined(separator: ".") as String? {
+                for i in 1...254 {
+                    let host = "\(prefix).\(i)"
+                    if !hostsToProbe.contains(host) {
+                        hostsToProbe.append(host)
+                    }
+                }
+            }
+        }
+
+        // Probe all hosts in parallel
         await withTaskGroup(of: DiscoveredServer?.self) { group in
-            for host in commonHosts {
+            for host in hostsToProbe {
                 group.addTask {
                     await self.probeHost(host, port: ServerConfig.defaultPort)
                 }
@@ -102,8 +113,6 @@ final class ServerDiscoveryService {
 
         for result in results {
             if case .service(let name, _, _, _) = result.endpoint {
-                // Resolve the endpoint to get host/port
-                // For now, store with the service name
                 servers.append(DiscoveredServer(
                     host: name,
                     port: ServerConfig.defaultPort,
@@ -115,7 +124,7 @@ final class ServerDiscoveryService {
         discoveredServers = servers
     }
 
-    private func probeHost(_ host: String, port: Int) async -> DiscoveredServer? {
+    nonisolated private func probeHost(_ host: String, port: Int) async -> DiscoveredServer? {
         guard let url = URL(string: "http://\(host):\(port)") else { return nil }
 
         do {
@@ -130,5 +139,42 @@ final class ServerDiscoveryService {
         }
 
         return nil
+    }
+
+    // MARK: - Network Helpers
+
+    /// Returns the device's WiFi (en0) IPv4 address, or nil if unavailable.
+    nonisolated private static func getWiFiIPAddress() -> String? {
+        var address: String?
+        var ifaddr: UnsafeMutablePointer<ifaddrs>?
+
+        guard getifaddrs(&ifaddr) == 0, let firstAddr = ifaddr else { return nil }
+        defer { freeifaddrs(ifaddr) }
+
+        for ptr in sequence(first: firstAddr, next: { $0.pointee.ifa_next }) {
+            let interface = ptr.pointee
+            let addrFamily = interface.ifa_addr.pointee.sa_family
+
+            guard addrFamily == UInt8(AF_INET) else { continue } // IPv4 only
+
+            let name = String(cString: interface.ifa_name)
+            guard name == "en0" else { continue } // WiFi interface
+
+            var hostname = [CChar](repeating: 0, count: Int(NI_MAXHOST))
+            let result = getnameinfo(
+                interface.ifa_addr,
+                socklen_t(interface.ifa_addr.pointee.sa_len),
+                &hostname,
+                socklen_t(hostname.count),
+                nil, 0,
+                NI_NUMERICHOST
+            )
+
+            if result == 0 {
+                address = String(cString: hostname)
+            }
+        }
+
+        return address
     }
 }

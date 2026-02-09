@@ -26,7 +26,11 @@ struct ModelPickerView: View {
                 Spacer()
 
                 Button {
-                    Task { await viewModel.refresh(modelService: modelService, networkService: networkService) }
+                    Task {
+                        viewModel.setRefreshing(true)
+                        await modelService.fetchModels(using: networkService)
+                        viewModel.setRefreshing(false)
+                    }
                 } label: {
                     Image(systemName: "arrow.clockwise")
                         .font(.system(size: Theme.iconSize))
@@ -42,7 +46,7 @@ struct ModelPickerView: View {
                 .font(Theme.font(.body))
                 .padding(.horizontal, Theme.spacingMD)
                 .padding(.vertical, Theme.spacingSM + 2)
-                .background(Color(.systemGray6), in: RoundedRectangle(cornerRadius: Theme.cornerRadiusSM, style: .continuous))
+                .background(Theme.surfaceColor, in: RoundedRectangle(cornerRadius: Theme.cornerRadiusSM, style: .continuous))
                 .padding(.horizontal, Theme.spacingMD)
                 .padding(.vertical, Theme.spacingSM)
 
@@ -65,7 +69,9 @@ struct ModelPickerView: View {
         }
         .task {
             if modelService.availableModels.isEmpty {
-                await viewModel.refresh(modelService: modelService, networkService: networkService)
+                viewModel.setRefreshing(true)
+                await modelService.fetchModels(using: networkService)
+                viewModel.setRefreshing(false)
             }
         }
     }
@@ -125,17 +131,18 @@ struct ModelPickerView: View {
                 if model.name == modelService.selectedModelName {
                     Image(systemName: "checkmark.circle.fill")
                         .font(.system(size: 24))
-                        .foregroundStyle(.blue)
+                        .foregroundStyle(Theme.accentBlue)
                 }
             }
             .padding(Theme.spacingMD)
             .background(
                 model.name == modelService.selectedModelName
-                    ? Color.blue.opacity(0.1)
-                    : Color(.systemGray6),
+                    ? Theme.accentBlue.opacity(0.15)
+                    : Theme.surfaceColor,
                 in: RoundedRectangle(cornerRadius: Theme.cornerRadiusSM, style: .continuous)
             )
         }
         .frame(minHeight: Theme.minTapTarget)
     }
 }
+

@@ -16,6 +16,11 @@ struct ChatView: View {
     @State private var viewModel = ChatViewModel()
     @State private var scrollProxy: ScrollViewProxy?
 
+    /// Whether the typing indicator is visible (streaming started, no tokens yet).
+    private var isWaitingForFirstToken: Bool {
+        chatService.isStreaming && chatService.currentResponse.isEmpty
+    }
+
     var body: some View {
         VStack(spacing: 0) {
             // Navigation Bar
@@ -24,28 +29,20 @@ struct ChatView: View {
             // Messages
             ScrollViewReader { proxy in
                 ScrollView {
-                    LazyVStack(spacing: Theme.spacingSM) {
-                        ForEach(viewModel.messages) { message in
-                            MessageBubbleView(
-                                message: message,
-                                isStreaming: false
-                            )
-                            .id(message.id)
-                        }
-
-                        // Streaming response
-                        if chatService.isStreaming, !chatService.currentResponse.isEmpty {
-                            streamingBubble
-                                .id("streaming")
-                        }
+                    if viewModel.messages.isEmpty && !chatService.isStreaming {
+                        welcomeState
+                    } else {
+                        messageList
                     }
-                    .padding(.vertical, Theme.spacingSM)
                 }
                 .onAppear { scrollProxy = proxy }
                 .onChange(of: chatService.currentResponse) {
                     scrollToBottom(proxy: proxy)
                 }
                 .onChange(of: viewModel.messages.count) {
+                    scrollToBottom(proxy: proxy)
+                }
+                .onChange(of: chatService.isStreaming) {
                     scrollToBottom(proxy: proxy)
                 }
             }
@@ -64,6 +61,7 @@ struct ChatView: View {
                 onStop: { stopGeneration() }
             )
         }
+        .background(Theme.backgroundPrimary)
         .onAppear {
             viewModel.configure(conversationID: conversationID, modelContext: modelContext)
         }
@@ -111,7 +109,91 @@ struct ChatView: View {
             .frame(minWidth: Theme.minTapTarget, minHeight: Theme.minTapTarget)
         }
         .padding(.horizontal, Theme.spacingSM)
-        .background(.ultraThinMaterial)
+        .background(.thinMaterial)
+    }
+
+    // MARK: - Welcome State
+
+    private var welcomeState: some View {
+        VStack(spacing: Theme.spacingMD) {
+            Spacer()
+
+            Image(systemName: "bubble.left.and.bubble.right")
+                .font(.system(size: 48, weight: .light))
+                .foregroundStyle(.secondary.opacity(0.6))
+
+            Text("Start a conversation")
+                .font(Theme.font(.title3))
+                .foregroundStyle(.secondary)
+
+            Text("Type a message below to chat with your model.")
+                .font(Theme.font(.subheadline))
+                .foregroundStyle(.tertiary)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, Theme.spacingXL)
+
+            Spacer()
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .padding(.vertical, Theme.spacingXL * 2)
+    }
+
+    // MARK: - Message List
+
+    private var messageList: some View {
+        LazyVStack(spacing: Theme.spacingSM) {
+            ForEach(viewModel.messages) { message in
+                MessageBubbleView(
+                    message: message,
+                    isStreaming: false
+                )
+                .id(message.id)
+                .contextMenu {
+                    contextMenuItems(for: message)
+                }
+            }
+
+            // Typing indicator (waiting for first token)
+            if isWaitingForFirstToken {
+                TypingIndicatorView()
+                    .id("typing")
+                    .transition(.opacity)
+            }
+
+            // Streaming response (tokens arriving)
+            if chatService.isStreaming, !chatService.currentResponse.isEmpty {
+                streamingBubble
+                    .id("streaming")
+            }
+        }
+        .padding(.vertical, Theme.spacingSM)
+    }
+
+    // MARK: - Context Menu
+
+    @ViewBuilder
+    private func contextMenuItems(for message: Message) -> some View {
+        Button {
+            UIPasteboard.general.string = message.content
+        } label: {
+            Label("Copy", systemImage: "doc.on.doc")
+        }
+
+        if message.role == .assistant {
+            Button {
+                hapticsService.tap()
+                Task {
+                    await viewModel.retryLast(
+                        chatService: chatService,
+                        networkService: networkService,
+                        modelName: modelService.selectedModelName
+                    )
+                    hapticsService.responseComplete()
+                }
+            } label: {
+                Label("Retry", systemImage: "arrow.counterclockwise")
+            }
+        }
     }
 
     // MARK: - Streaming Bubble
@@ -157,7 +239,7 @@ struct ChatView: View {
         }
         .padding(.horizontal, Theme.spacingMD)
         .padding(.vertical, Theme.spacingSM)
-        .background(Color.orange.opacity(0.15))
+        .background(Color.orange.opacity(0.1))
     }
 
     // MARK: - Actions
@@ -181,7 +263,14 @@ struct ChatView: View {
     }
 
     private func scrollToBottom(proxy: ScrollViewProxy) {
-        let targetID = chatService.isStreaming ? "streaming" : viewModel.messages.last?.id
+        let targetID: String? = if isWaitingForFirstToken {
+            "typing"
+        } else if chatService.isStreaming {
+            "streaming"
+        } else {
+            viewModel.messages.last?.id
+        }
+
         guard let id = targetID else { return }
         withAnimation(reduceMotion ? .none : .easeOut(duration: 0.2)) {
             proxy.scrollTo(id, anchor: .bottom)

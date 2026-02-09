@@ -1,5 +1,6 @@
 import Foundation
 
+@MainActor
 @Observable
 final class ModelPickerViewModel {
     var searchText = ""
@@ -10,9 +11,7 @@ final class ModelPickerViewModel {
         return models.filter { $0.displayName.localizedCaseInsensitiveContains(searchText) }
     }
 
-    func refresh(modelService: ModelService, networkService: NetworkService) async {
-        isRefreshing = true
-        await modelService.fetchModels(using: networkService)
-        isRefreshing = false
+    func setRefreshing(_ value: Bool) {
+        isRefreshing = value
     }
 }

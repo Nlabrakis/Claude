@@ -8,22 +8,32 @@ final class AppState {
         case modelPicker
         case serverStatus
         case settings
+        case connectionSettings
+        case onboarding
     }
 
     var currentScreen: Screen = .conversations
-    var previousScreen: Screen?
+    var navigationStack: [Screen] = []
+
+    var showOnboarding: Bool {
+        currentScreen == .onboarding
+    }
 
     func navigate(to screen: Screen) {
-        previousScreen = currentScreen
+        navigationStack.append(currentScreen)
         currentScreen = screen
     }
 
     func goBack() {
-        if let previous = previousScreen {
+        if let previous = navigationStack.popLast() {
             currentScreen = previous
-            previousScreen = nil
         } else {
             currentScreen = .conversations
         }
+    }
+
+    func popToRoot() {
+        navigationStack.removeAll()
+        currentScreen = .conversations
     }
 }

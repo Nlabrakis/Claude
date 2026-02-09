@@ -9,6 +9,8 @@ struct ContentView: View {
 
     var body: some View {
         ZStack {
+            Theme.backgroundPrimary.ignoresSafeArea()
+
             switch appState.currentScreen {
             case .conversations:
                 ConversationsListView()
@@ -24,21 +26,32 @@ struct ContentView: View {
 
             case .settings:
                 SettingsView()
+
+            case .connectionSettings:
+                ConnectionSettingsView()
+
+            case .onboarding:
+                OnboardingView()
             }
         }
         .animation(Theme.conditionalAnimation(reduceMotion), value: appState.currentScreen)
+        .preferredColorScheme(.dark)
         .task {
             await autoConnect()
         }
     }
 
     private func autoConnect() async {
+        // Check for first launch — show onboarding if no saved server
+        guard let savedServer = connectionManager.loadSavedServer() else {
+            appState.navigate(to: .onboarding)
+            return
+        }
+
         // Try to reconnect to last saved server
-        if let savedServer = connectionManager.loadSavedServer() {
-            await connectionManager.connect(to: savedServer, using: networkService)
-            if connectionManager.status == .connected {
-                await modelService.fetchModels(using: networkService)
-            }
+        await connectionManager.connect(to: savedServer, using: networkService)
+        if connectionManager.status == .connected {
+            await modelService.fetchModels(using: networkService)
         }
 
         connectionManager.startNetworkMonitoring()
