@@ -34,7 +34,17 @@ final class ChatViewModel {
         modelName: String?
     ) async {
         let text = inputText.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !text.isEmpty, let conversation, let modelName else { return }
+        guard !text.isEmpty else { return }
+
+        // Explicit error feedback instead of silent failures
+        guard let conversation else {
+            error = "No conversation selected. Go back and create one."
+            return
+        }
+        guard let modelName, !modelName.isEmpty else {
+            error = "No model selected. Tap the CPU icon to pick a model."
+            return
+        }
 
         // Create and persist user message
         let userMessage = Message(role: .user, content: text)

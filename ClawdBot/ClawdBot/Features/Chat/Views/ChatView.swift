@@ -153,11 +153,16 @@ struct ChatView: View {
                 }
             }
 
-            // Typing indicator (waiting for first token)
+            // Typing indicator with model loading hint
             if isWaitingForFirstToken {
-                TypingIndicatorView()
-                    .id("typing")
-                    .transition(.opacity)
+                VStack(spacing: 8) {
+                    TypingIndicatorView()
+                    Text("Loading model into GPU...")
+                        .font(Theme.font(.caption))
+                        .foregroundStyle(.tertiary)
+                }
+                .id("typing")
+                .transition(.opacity)
             }
 
             // Streaming response (tokens arriving)
